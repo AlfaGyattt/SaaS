@@ -7,7 +7,7 @@ import { Logo } from "@/components/brand/logo";
 import { APP_NAV, APP_NAV_SECONDARY } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
-export function Sidebar() {
+export function Sidebar({ plan = "FREE" }: { plan?: string }) {
   const pathname = usePathname();
 
   const isActive = (href: string) =>
@@ -53,20 +53,22 @@ export function Sidebar() {
             </Link>
           ))}
 
-          <div className="mt-2 rounded-xl border border-primary/20 bg-primary-50/60 p-4">
-            <div className="flex items-center gap-2 text-sm font-semibold text-primary-700">
-              <Sparkles className="size-4" /> Passer Pro
+          {plan === "FREE" && (
+            <div className="mt-2 rounded-xl border border-primary/20 bg-primary-50/60 p-4">
+              <div className="flex items-center gap-2 text-sm font-semibold text-primary-700">
+                <Sparkles className="size-4" /> Passer Pro
+              </div>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Candidatures illimitées et adaptation à l&apos;offre.
+              </p>
+              <Link
+                href="/app/parametres"
+                className="mt-3 inline-flex text-xs font-medium text-primary hover:underline"
+              >
+                Voir les offres →
+              </Link>
             </div>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Candidatures illimitées et adaptation à l&apos;offre.
-            </p>
-            <Link
-              href="/app/parametres/facturation"
-              className="mt-3 inline-flex text-xs font-medium text-primary hover:underline"
-            >
-              Voir les offres →
-            </Link>
-          </div>
+          )}
         </div>
       </nav>
     </aside>

@@ -2,53 +2,73 @@
 
 > Le copilote de candidature français. Collez une offre → CV, lettre et mail adaptés, en français, en 10 minutes. Sans abonnement piège.
 
-MVP web construit à partir du dossier de conception (voir [`docs/`](./docs)). Ce dépôt contient la base produit : landing page orientée conversion/SEO, espace application (dashboard, flux « Postuler à une offre », suivi de candidatures), design system Postulo et fondation de données.
+Application full-stack **fonctionnelle de bout en bout** : authentification, base de données, génération IA, CV éditable persistant, flux d'adaptation à l'offre et suivi de candidatures. Construite à partir du dossier de conception (voir [`docs/`](./docs)).
 
 ## Stack
 
-- **Next.js 16** (App Router, React 19) + **TypeScript**
-- **Tailwind CSS v4** (tokens CSS-first) + composants maison façon shadcn/Radix
-- **next-themes** (clair/sombre), **lucide-react** (icônes), **class-variance-authority**
-- **Prisma / PostgreSQL** (schéma de fondation dans [`prisma/schema.prisma`](./prisma/schema.prisma) — pgvector pour le matching offre↔CV)
-- Polices : Manrope (titres), Inter (corps), JetBrains Mono (chiffres)
+- **Next.js 16** (App Router, React 19, Server Actions) + **TypeScript**
+- **Tailwind CSS v4** + composants maison (design system Postulo)
+- **Prisma 6** + **SQLite** en dev (portable vers PostgreSQL en prod)
+- **Auth maison** : email/mot de passe (bcrypt) + session JWT signée (jose), cookie httpOnly
+- **IA** : SDK Anthropic (Claude **Sonnet** pour la génération, **Haiku** pour l'extraction/scoring) avec **fallback démo déterministe** si aucune clé n'est fournie
+- **zod** (validation), **next-themes** (clair/sombre), **lucide-react** (icônes)
 
 ## Démarrer
 
 ```bash
-pnpm install
-pnpm dev          # http://localhost:3000
+pnpm install                 # génère aussi le client Prisma (postinstall)
+cp .env.example .env         # puis ajustez si besoin
+pnpm prisma migrate dev      # crée la base SQLite (prisma/dev.db)
+pnpm dev                     # http://localhost:3000
 ```
 
-Autres commandes : `pnpm build` (build de production), `pnpm start` (serveur de prod), `pnpm lint`.
+Créez un compte sur `/inscription`, puis créez un CV, adaptez-le à une offre et suivez vos candidatures.
+
+### Variables d'environnement
+
+| Variable | Rôle |
+|---|---|
+| `DATABASE_URL` | Connexion DB (dev : `file:./dev.db`) |
+| `AUTH_SECRET` | Secret de signature des sessions (valeur forte en prod) |
+| `ANTHROPIC_API_KEY` | **Optionnel.** Si absent, l'IA tourne en **mode démo** (résultats déterministes, l'app reste pleinement utilisable). Si présent, génération réelle via Claude. |
+
+## Ce qui fonctionne (vertical complet)
+
+- **Auth réelle** : inscription, connexion, déconnexion, sessions signées, protection de `/app/*`, anti-énumération.
+- **CV** : création, **éditeur live** (aperçu A4 fidèle, autosave), assistance IA (accroche, amélioration de puces), **score ATS** recalculé en direct, **export PDF** (impression navigateur), suppression.
+- **Postuler** : analyse d'offre + compatibilité (IA ou démo) → génération CV/lettre/mail → **candidature créée automatiquement** dans le suivi.
+- **Suivi** : kanban des candidatures, **changement de statut** persistant, relances.
+- **Dashboard** : compteurs réels, CV récent, relances, score ATS moyen, états vides soignés.
 
 ## Structure
 
 ```
 src/
   app/
-    page.tsx              Landing page (Hero, démo, features, pricing, FAQ…)
-    connexion / inscription   Authentification (magic link + Google)
-    app/                  Espace connecté
-      page.tsx            Dashboard (action primaire unique, widgets, pipeline)
-      postuler/           Flux offre → CV+lettre+mail (assistant 3 étapes)
-      candidatures/       Suivi kanban des candidatures
-      cv/ modeles/ lettres/ entretien/ parametres/
-  components/
-    ui/                   Design system (button, card, badge, input, score-ring…)
-    marketing/            Sections de la landing
-    app/                  Sidebar, topbar, navigation mobile
-    auth/  brand/
-  lib/                    utils (cn), constantes (contenu, nav, pricing)
-prisma/schema.prisma      Modèle de données (User, Resume, Application, Org…)
-docs/                     Analyse de marché, blueprint et dossier de conception
+    page.tsx                 Landing (Hero, démo, features, pricing, FAQ + JSON-LD)
+    connexion / inscription  Auth (Server Actions + useActionState)
+    imprimer/cv/[id]         Vue d'impression A4 (export PDF)
+    app/                     Espace connecté (protégé)
+      page.tsx               Dashboard
+      cv/ , cv/[id]          Liste + éditeur de CV
+      postuler/              Flux offre → candidature
+      candidatures/          Suivi kanban
+      modeles/ lettres/ entretien/ parametres/
+  components/  ui/ marketing/ app/ auth/ brand/ resume/
+  server/
+    db.ts                    Client Prisma (singleton)
+    auth.ts                  Sessions, hashing, requireUser()
+    types.ts                 Schémas zod (ResumeData…) partagés
+    ai/index.ts              Couche IA (Claude + fallback démo)
+    actions/                 Server Actions (auth, resume, application, tailor)
+prisma/schema.prisma         Modèle de données
+docs/                        Analyse de marché, blueprint, dossier de conception
 ```
 
-## Design system (extrait)
+## Production (PostgreSQL)
 
-- **Primaire** « Encre électrique » indigo `#3D5AFE` · **Accent** « Signal » corail `#FF6B4A` (réservé à la conversion et aux moments de succès).
-- Tokens sémantiques en variables CSS (`--primary`, `--muted-foreground`…), thème sombre inclus, focus visible accessible (WCAG AA).
-- Principes UX : action primaire unique (loi de Hick), cibles tactiles généreuses (Fitts), résultat avant inscription, < 2 clics pour les actions clés.
+Basculer `datasource.provider` sur `postgresql` dans `prisma/schema.prisma`, pointer `DATABASE_URL` vers un Postgres (Neon/RDS), `pnpm prisma migrate deploy`. Les payloads structurés sont déjà stockés en `String` (JSON), donc portables. Pour le matching sémantique offre↔CV, activer `pgvector` (cf. dossier de conception §11).
 
-## État
+## Scripts
 
-MVP front fonctionnel et buildable (toutes les routes en statique). Prochaines étapes : câblage de l'authentification (Auth.js), des paiements (Stripe), de la base de données (Prisma + Postgres) et des appels IA (génération CV/lettres, scoring ATS). Voir le plan complet dans `docs/postulo-conception-produit-design-system.md`.
+`pnpm dev` · `pnpm build` · `pnpm start` · `pnpm lint` · `pnpm db:push` · `pnpm db:studio` · `pnpm db:reset`

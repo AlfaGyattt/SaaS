@@ -1,9 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { Mail } from "lucide-react";
 import { AuthShell, GoogleButton } from "@/components/auth/auth-shell";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import { RegisterForm } from "@/components/auth/auth-forms";
 
 export const metadata: Metadata = { title: "Créer un compte" };
 
@@ -25,15 +23,10 @@ export default function InscriptionPage() {
         <GoogleButton />
         <div className="flex items-center gap-3 py-1">
           <span className="h-px flex-1 bg-border" />
-          <span className="text-xs text-muted-foreground">ou</span>
+          <span className="text-xs text-muted-foreground">ou par email</span>
           <span className="h-px flex-1 bg-border" />
         </div>
-        <form className="space-y-3" action="/app">
-          <Input type="email" placeholder="vous@email.com" aria-label="Adresse email" required />
-          <Button type="submit" className="w-full" size="lg">
-            <Mail className="size-4" /> Continuer par email
-          </Button>
-        </form>
+        <RegisterForm />
       </div>
     </AuthShell>
   );

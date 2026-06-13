@@ -64,7 +64,12 @@ export function AuthShell({
 
 export function GoogleButton() {
   return (
-    <button className="flex h-11 w-full items-center justify-center gap-2.5 rounded-md border border-border bg-surface text-sm font-medium transition-colors hover:bg-muted">
+    <button
+      type="button"
+      disabled
+      title="Bientôt disponible"
+      className="flex h-11 w-full cursor-not-allowed items-center justify-center gap-2.5 rounded-md border border-border bg-surface text-sm font-medium opacity-60"
+    >
       <svg className="size-4" viewBox="0 0 24 24" aria-hidden>
         <path
           fill="#4285F4"

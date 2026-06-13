@@ -1,0 +1,198 @@
+// Postulo — schéma de base de données (fondation backend)
+// Provider: PostgreSQL (Neon/RDS) + pgvector pour le matching offre<->CV.
+// Ce schéma reflète le dossier de conception (docs/postulo-conception-produit-design-system.md §11.2).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Plan {
+  FREE
+  PRO
+  CARRIERE
+}
+
+enum OrgType {
+  ECOLE
+  CFA
+  OUTPLACEMENT
+  ENTREPRISE
+}
+
+enum OrgRole {
+  MEMBER
+  ADMIN
+}
+
+enum AppStatus {
+  BROUILLON
+  PRETE
+  ENVOYEE
+  RELANCEE
+  ENTRETIEN
+  OFFRE
+  ACCEPTEE
+  REFUSEE
+  SANS_REPONSE
+}
+
+model User {
+  id            String             @id @default(cuid())
+  email         String             @unique
+  name          String?
+  locale        String             @default("fr")
+  plan          Plan               @default(FREE)
+  passExpiresAt DateTime?
+  memberships   Membership[]
+  resumes       Resume[]
+  letters       Letter[]
+  applications  Application[]
+  interviews    InterviewSession[]
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+}
+
+model Organization {
+  id       String       @id @default(cuid())
+  slug     String       @unique
+  name     String
+  type     OrgType
+  seats    Int          @default(0)
+  members  Membership[]
+  license  License?
+  createdAt DateTime    @default(now())
+}
+
+model Membership {
+  id     String       @id @default(cuid())
+  user   User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+  org    Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  orgId  String
+  role   OrgRole      @default(MEMBER)
+
+  @@unique([userId, orgId])
+}
+
+model License {
+  id       String       @id @default(cuid())
+  org      Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  orgId    String       @unique
+  plan     Plan         @default(PRO)
+  seats    Int          @default(0)
+  validTo  DateTime?
+}
+
+model Resume {
+  id        String          @id @default(cuid())
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  title     String
+  romeCode  String?
+  versions  ResumeVersion[]
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  @@index([userId])
+}
+
+model ResumeVersion {
+  id         String   @id @default(cuid())
+  resume     Resume   @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+  resumeId   String
+  data       Json
+  templateId String
+  forOfferId String?
+  atsScore   Int?
+  createdAt  DateTime @default(now())
+
+  @@index([resumeId])
+}
+
+model Letter {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  title     String
+  body      String
+  tone      String   @default("sobre")
+  forOfferId String?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model JobOffer {
+  id           String        @id @default(cuid())
+  sourceUrl    String?
+  rawText      String
+  title        String?
+  company      String?
+  requirements Json?
+  applications Application[]
+  createdAt    DateTime      @default(now())
+}
+
+model Application {
+  id             String             @id @default(cuid())
+  user           User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId         String
+  offer          JobOffer?          @relation(fields: [offerId], references: [id])
+  offerId        String?
+  resumeVerId    String?
+  letterId       String?
+  status         AppStatus          @default(BROUILLON)
+  matchScore     Int?
+  nextFollowUpAt DateTime?
+  events         ApplicationEvent[]
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  @@index([userId, status])
+}
+
+model ApplicationEvent {
+  id     String      @id @default(cuid())
+  app    Application @relation(fields: [appId], references: [id], onDelete: Cascade)
+  appId  String
+  type   String
+  meta   Json?
+  at     DateTime    @default(now())
+
+  @@index([appId])
+}
+
+model InterviewSession {
+  id         String   @id @default(cuid())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     String
+  romeCode   String?
+  transcript Json
+  feedback   Json?
+  createdAt  DateTime @default(now())
+
+  @@index([userId])
+}
+
+// Référentiel métiers (ROME) : ossature pSEO + suggestions IA.
+model RomeOccupation {
+  code         String @id
+  label        String
+  skills       Json
+  sampleBullets Json
+}
+
+model AuditLog {
+  id     String   @id @default(cuid())
+  userId String?
+  action String
+  ip     String?
+  at     DateTime @default(now())
+
+  @@index([userId])
+}

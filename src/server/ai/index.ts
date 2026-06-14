@@ -125,6 +125,58 @@ export async function generateLetter(opts: {
 }
 
 // ---------------------------------------------------------------------------
+// 3 bis. Mail de candidature
+// ---------------------------------------------------------------------------
+export async function generateMail(opts: {
+  data: ResumeData;
+  poste?: string;
+  company?: string;
+}): Promise<{ subject: string; body: string }> {
+  const { data, poste, company } = opts;
+  const fullName = `${data.prenom} ${data.nom}`.trim() || "Votre candidat";
+  const role = poste || data.titre || "votre offre";
+  if (!hasAI()) {
+    return {
+      subject: `Candidature — ${role}${company ? ` chez ${company}` : ""}`,
+      body: [
+        `Bonjour,`,
+        ``,
+        `Je me permets de vous adresser ma candidature au poste de ${role.toLowerCase()}${
+          company ? ` au sein de ${company}` : ""
+        }.`,
+        `Vous trouverez ci-joint mon CV et ma lettre de motivation.`,
+        ``,
+        `Je reste à votre disposition pour un entretien et vous remercie de l'attention portée à ma candidature.`,
+        ``,
+        `Bien cordialement,`,
+        fullName,
+        data.telephone || "",
+      ]
+        .filter((l) => l !== undefined)
+        .join("\n"),
+    };
+  }
+  const raw = await callClaude({
+    system: SYSTEM_FR,
+    model: MODEL_FAST,
+    maxTokens: 320,
+    prompt:
+      `Rédige un email de candidature court et professionnel (4-6 lignes) en français. ` +
+      `Réponds en JSON {"subject": string, "body": string}. ` +
+      `Poste : ${role}. Entreprise : ${company ?? "—"}. Candidat : ${fullName}.`,
+  });
+  try {
+    const json = JSON.parse(raw.replace(/```json|```/g, "").trim());
+    return { subject: String(json.subject), body: String(json.body) };
+  } catch {
+    return {
+      subject: `Candidature — ${role}`,
+      body: raw || `Bonjour,\n\nJe vous adresse ma candidature au poste de ${role}.\n\nCordialement,\n${fullName}`,
+    };
+  }
+}
+
+// ---------------------------------------------------------------------------
 // 4. Analyse d'offre + matching (extraction structurée)
 // ---------------------------------------------------------------------------
 export async function analyzeOffer(rawText: string, data?: ResumeData): Promise<OfferAnalysis> {
@@ -227,4 +279,65 @@ export function scoreAts(data: ResumeData): { score: number; tips: string[] } {
   else tips.push("Vérifiez vos coordonnées (email et téléphone).");
 
   return { score: Math.min(98, score), tips: tips.slice(0, 4) };
+}
+
+// ---------------------------------------------------------------------------
+// 6. Simulation d'entretien (l'IA joue le recruteur)
+// ---------------------------------------------------------------------------
+export type InterviewMessage = { from: "ai" | "user"; text: string };
+
+const MOCK_QUESTIONS = [
+  "Présentez-vous en une minute : votre parcours et ce qui vous amène ici.",
+  "Pourquoi ce poste et notre entreprise en particulier ?",
+  "Parlez-moi d'une réussite dont vous êtes fier(e). Quel a été votre rôle précis ?",
+  "Quelle est votre plus grande qualité, et un axe de progrès sur lequel vous travaillez ?",
+  "Décrivez une situation difficile au travail et comment vous l'avez gérée.",
+  "Où vous voyez-vous dans 3 ans, et avez-vous des questions à me poser ?",
+];
+
+export async function interviewTurn(opts: {
+  metier: string;
+  messages: InterviewMessage[];
+}): Promise<{ reply: string; feedback?: string; done: boolean }> {
+  const { metier, messages } = opts;
+  const answers = messages.filter((m) => m.from === "user").length;
+
+  if (!hasAI()) {
+    const lastAnswer = [...messages].reverse().find((m) => m.from === "user")?.text ?? "";
+    const feedback =
+      answers === 0
+        ? undefined
+        : lastAnswer.length < 40
+          ? "Réponse un peu courte : développez avec un exemple concret (méthode STAR : Situation, Tâche, Action, Résultat)."
+          : "Bonne réponse — pensez à la terminer par un résultat chiffré quand c'est possible.";
+    const done = answers >= MOCK_QUESTIONS.length - 1;
+    const reply = done
+      ? "Merci, l'entretien est terminé. Vous avez été clair(e) et structuré(e) — continuez à appuyer chaque réponse par des exemples concrets."
+      : MOCK_QUESTIONS[Math.min(answers, MOCK_QUESTIONS.length - 1)];
+    return { reply, feedback, done };
+  }
+
+  const transcript = messages
+    .map((m) => `${m.from === "ai" ? "Recruteur" : "Candidat"}: ${m.text}`)
+    .join("\n");
+  const raw = await callClaude({
+    system:
+      "Tu es un recruteur français bienveillant et exigeant qui mène un entretien pour un poste de " +
+      `${metier}. Tu donnes un retour bref et constructif sur la dernière réponse, puis tu poses ` +
+      "UNE nouvelle question. Réponds en JSON {\"feedback\": string|null, \"reply\": string, \"done\": boolean}. " +
+      "done=true seulement après 5-6 questions.",
+    model: MODEL_GEN,
+    maxTokens: 400,
+    prompt: `Métier : ${metier}.\nÉchange jusqu'ici :\n${transcript || "(début de l'entretien)"}`,
+  });
+  try {
+    const json = JSON.parse(raw.replace(/```json|```/g, "").trim());
+    return {
+      reply: String(json.reply),
+      feedback: json.feedback ? String(json.feedback) : undefined,
+      done: Boolean(json.done),
+    };
+  } catch {
+    return { reply: raw || MOCK_QUESTIONS[Math.min(answers, 5)], done: answers >= 5 };
+  }
 }

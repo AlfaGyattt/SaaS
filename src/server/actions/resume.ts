@@ -12,20 +12,35 @@ import {
 } from "../types";
 import { generateAccroche, improveBullet, scoreAts } from "../ai";
 
+const TEMPLATES = ["sobre", "moderne", "elegant", "compact", "creatif", "classique"];
+
 export async function createResume(formData?: FormData): Promise<void> {
   const user = await requireUser();
   const title = (formData?.get("title") as string) || "Nouveau CV";
+  const templateRaw = formData?.get("templateId") as string | null;
+  const templateId = templateRaw && TEMPLATES.includes(templateRaw) ? templateRaw : "sobre";
   const data = emptyResumeData();
   data.prenom = user.name?.split(" ")[0] ?? "";
   data.email = user.email;
   const resume = await db.resume.create({
-    data: { userId: user.id, title, data: JSON.stringify(data), atsScore: scoreAts(data).score },
+    data: {
+      userId: user.id,
+      title,
+      templateId,
+      data: JSON.stringify(data),
+      atsScore: scoreAts(data).score,
+    },
   });
   revalidatePath("/app/cv");
   redirect(`/app/cv/${resume.id}`);
 }
 
-export async function saveResume(id: string, data: ResumeData, title?: string) {
+export async function saveResume(
+  id: string,
+  data: ResumeData,
+  title?: string,
+  templateId?: string,
+) {
   const user = await requireUser();
   const parsed = resumeDataSchema.parse(data);
   const { score } = scoreAts(parsed);
@@ -35,6 +50,7 @@ export async function saveResume(id: string, data: ResumeData, title?: string) {
       data: JSON.stringify(parsed),
       atsScore: score,
       ...(title ? { title } : {}),
+      ...(templateId && TEMPLATES.includes(templateId) ? { templateId } : {}),
     },
   });
   revalidatePath(`/app/cv/${id}`);

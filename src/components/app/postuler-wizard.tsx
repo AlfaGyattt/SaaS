@@ -7,11 +7,12 @@ import {
   ArrowLeft,
   Check,
   Sparkles,
-  FileText,
   Mail,
-  Send,
   Loader2,
+  Copy,
+  FileText,
 } from "lucide-react";
+import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/input";
@@ -20,6 +21,31 @@ import { analyzeOfferAction, createTailoredApplication } from "@/server/actions/
 import type { OfferAnalysis } from "@/server/types";
 import { cn } from "@/lib/utils";
 
+type TailorResult = {
+  letterBody: string;
+  mailSubject: string;
+  mailBody: string;
+};
+
+function CopyButton({ text, label }: { text: string; label: string }) {
+  return (
+    <Button
+      variant="outline"
+      size="sm"
+      onClick={async () => {
+        try {
+          await navigator.clipboard.writeText(text);
+          toast.success(`${label} copié dans le presse-papier.`);
+        } catch {
+          toast.error("Impossible de copier.");
+        }
+      }}
+    >
+      <Copy className="size-4" /> Copier
+    </Button>
+  );
+}
+
 const STEPS = ["Coller l'offre", "Compatibilité", "Candidature prête"];
 
 export function PostulerWizard({ resumes }: { resumes: { id: string; title: string }[] }) {
@@ -27,22 +53,39 @@ export function PostulerWizard({ resumes }: { resumes: { id: string; title: stri
   const [offer, setOffer] = React.useState("");
   const [resumeId, setResumeId] = React.useState(resumes[0]?.id ?? "");
   const [analysis, setAnalysis] = React.useState<OfferAnalysis | null>(null);
+  const [result, setResult] = React.useState<TailorResult | null>(null);
   const [loading, setLoading] = React.useState(false);
 
   async function analyze() {
     setLoading(true);
-    const res = await analyzeOfferAction(offer, resumeId || undefined);
-    setAnalysis(res);
-    setStep(1);
-    setLoading(false);
+    try {
+      const res = await analyzeOfferAction(offer, resumeId || undefined);
+      setAnalysis(res);
+      setStep(1);
+    } catch {
+      toast.error("L'analyse a échoué. Réessayez.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function generate() {
     if (!analysis) return;
     setLoading(true);
-    await createTailoredApplication({ offerText: offer, resumeId: resumeId || undefined, analysis });
-    setStep(2);
-    setLoading(false);
+    try {
+      const res = await createTailoredApplication({
+        offerText: offer,
+        resumeId: resumeId || undefined,
+        analysis,
+      });
+      setResult(res);
+      setStep(2);
+      toast.success("Candidature générée et ajoutée au suivi.");
+    } catch {
+      toast.error("La génération a échoué. Réessayez.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -182,21 +225,38 @@ export function PostulerWizard({ resumes }: { resumes: { id: string; title: stri
                 CV, lettre et mail adaptés à l&apos;offre, et ajoutés à votre suivi.
               </p>
             </div>
-            <div className="grid gap-3 sm:grid-cols-3">
-              {[
-                { icon: FileText, label: "CV adapté" },
-                { icon: Mail, label: "Lettre de motivation" },
-                { icon: Send, label: "Mail de candidature" },
-              ].map((d) => (
-                <div
-                  key={d.label}
-                  className="flex flex-col items-center gap-2 rounded-xl border border-border bg-bg-subtle p-4 text-center"
-                >
-                  <d.icon className="size-5 text-primary" />
-                  <span className="text-sm font-medium">{d.label}</span>
+            {result && (
+              <div className="space-y-3">
+                <div className="rounded-xl border border-border">
+                  <div className="flex items-center justify-between border-b border-border px-4 py-2.5">
+                    <span className="flex items-center gap-2 text-sm font-medium">
+                      <Mail className="size-4 text-primary" /> Lettre de motivation
+                    </span>
+                    <CopyButton text={result.letterBody} label="Lettre" />
+                  </div>
+                  <pre className="max-h-48 overflow-auto whitespace-pre-wrap px-4 py-3 font-sans text-sm text-muted-foreground">
+                    {result.letterBody}
+                  </pre>
                 </div>
-              ))}
-            </div>
+                <div className="rounded-xl border border-border">
+                  <div className="flex items-center justify-between border-b border-border px-4 py-2.5">
+                    <span className="flex items-center gap-2 text-sm font-medium">
+                      <FileText className="size-4 text-primary" /> Mail de candidature
+                    </span>
+                    <CopyButton
+                      text={`Objet : ${result.mailSubject}\n\n${result.mailBody}`}
+                      label="Mail"
+                    />
+                  </div>
+                  <div className="px-4 py-3 text-sm">
+                    <p className="font-medium">Objet : {result.mailSubject}</p>
+                    <pre className="mt-1 whitespace-pre-wrap font-sans text-muted-foreground">
+                      {result.mailBody}
+                    </pre>
+                  </div>
+                </div>
+              </div>
+            )}
             <div className="flex flex-col gap-2 sm:flex-row sm:justify-between">
               <Button variant="outline" asChild>
                 <Link href="/app/candidatures">Voir mon suivi</Link>
@@ -207,6 +267,7 @@ export function PostulerWizard({ resumes }: { resumes: { id: string; title: stri
                   setStep(0);
                   setOffer("");
                   setAnalysis(null);
+                  setResult(null);
                 }}
               >
                 Postuler à une autre offre

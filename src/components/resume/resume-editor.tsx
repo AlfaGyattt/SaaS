@@ -14,6 +14,7 @@ import {
   Eye,
   Pencil,
 } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input, Textarea } from "@/components/ui/input";
 import { ScoreRing } from "@/components/ui/score-ring";
@@ -26,6 +27,15 @@ const uid = () =>
   typeof crypto !== "undefined" && crypto.randomUUID
     ? crypto.randomUUID()
     : Math.random().toString(36).slice(2);
+
+const TEMPLATES: { id: string; label: string; color: string }[] = [
+  { id: "sobre", label: "Sobre", color: "#334155" },
+  { id: "moderne", label: "Moderne", color: "#3d5afe" },
+  { id: "elegant", label: "Élégant", color: "#059669" },
+  { id: "compact", label: "Compact", color: "#b45309" },
+  { id: "creatif", label: "Créatif", color: "#ff6b4a" },
+  { id: "classique", label: "Classique", color: "#3f3f46" },
+];
 
 type SaveStatus = "idle" | "saving" | "saved";
 
@@ -44,6 +54,7 @@ export function ResumeEditor({
 }) {
   const [title, setTitle] = React.useState(initialTitle);
   const [data, setData] = React.useState<ResumeData>(initialData);
+  const [template, setTemplate] = React.useState(templateId);
   const [score, setScore] = React.useState(initialScore);
   const [status, setStatus] = React.useState<SaveStatus>("idle");
   const [aiAccroche, setAiAccroche] = React.useState(false);
@@ -58,22 +69,35 @@ export function ResumeEditor({
     }
     setStatus("saving");
     const t = setTimeout(async () => {
-      const res = await saveResume(id, data, title);
-      setScore(res.score);
-      setStatus("saved");
+      try {
+        const res = await saveResume(id, data, title, template);
+        setScore(res.score);
+        setStatus("saved");
+      } catch {
+        setStatus("idle");
+        toast.error("Échec de l'enregistrement. Vérifiez votre connexion.");
+      }
     }, 900);
     return () => clearTimeout(t);
-  }, [data, title, id]);
+  }, [data, title, template, id]);
 
   const set = <K extends keyof ResumeData>(key: K, value: ResumeData[K]) =>
     setData((d) => ({ ...d, [key]: value }));
 
   async function onSuggestAccroche() {
     setAiAccroche(true);
-    await saveResume(id, data, title); // s'assurer que le profil est à jour
-    const { text } = await suggestAccroche(id);
-    if (text) set("accroche", text);
-    setAiAccroche(false);
+    try {
+      await saveResume(id, data, title, template); // profil à jour avant suggestion
+      const { text } = await suggestAccroche(id);
+      if (text) {
+        set("accroche", text);
+        toast.success("Accroche générée par l'IA.");
+      }
+    } catch {
+      toast.error("La génération a échoué. Réessayez.");
+    } finally {
+      setAiAccroche(false);
+    }
   }
 
   return (
@@ -111,6 +135,22 @@ export function ResumeEditor({
               <br />
               ATS
             </span>
+          </div>
+          <div className="hidden items-center gap-1 rounded-lg border border-border p-1 md:flex">
+            {TEMPLATES.map((t) => (
+              <button
+                key={t.id}
+                onClick={() => setTemplate(t.id)}
+                title={t.label}
+                aria-label={`Modèle ${t.label}`}
+                aria-pressed={template === t.id}
+                className={cn(
+                  "size-5 rounded-full ring-offset-2 ring-offset-background transition-all",
+                  template === t.id ? "ring-2 ring-primary" : "hover:scale-110",
+                )}
+                style={{ backgroundColor: t.color }}
+              />
+            ))}
           </div>
           <Button variant="outline" size="sm" asChild>
             <a href={`/imprimer/cv/${id}`} target="_blank" rel="noopener noreferrer">
@@ -232,7 +272,7 @@ export function ResumeEditor({
         <div className={cn(tab === "edit" && "hidden lg:block")}>
           <div className="lg:sticky lg:top-20">
             <div className="rounded-xl border border-border bg-bg-subtle p-4">
-              <ResumeCanvas data={data} templateId={templateId} />
+              <ResumeCanvas data={data} templateId={template} />
             </div>
           </div>
         </div>
@@ -261,11 +301,22 @@ function ExperiencesBlock({
   const remove = (id: string) => onChange(items.filter((e) => e.id !== id));
 
   async function improve(e: Experience) {
-    if (!e.description.trim()) return;
+    if (!e.description.trim()) {
+      toast.info("Écrivez d'abord une description à améliorer.");
+      return;
+    }
     setBusy(e.id);
-    const { text } = await improveText(e.description);
-    if (text) update(e.id, { description: text });
-    setBusy(null);
+    try {
+      const { text } = await improveText(e.description);
+      if (text) {
+        update(e.id, { description: text });
+        toast.success("Description améliorée.");
+      }
+    } catch {
+      toast.error("L'amélioration a échoué. Réessayez.");
+    } finally {
+      setBusy(null);
+    }
   }
 
   return (

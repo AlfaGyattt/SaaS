@@ -17,10 +17,12 @@ Application full-stack **fonctionnelle de bout en bout** : authentification, bas
 
 ```bash
 pnpm install                 # génère aussi le client Prisma (postinstall)
-cp .env.example .env         # puis ajustez si besoin
-pnpm prisma migrate dev      # crée la base SQLite (prisma/dev.db)
+cp .env.example .env         # renseignez DATABASE_URL (Postgres) et AUTH_SECRET
+pnpm prisma db push          # crée les tables dans votre base Postgres
 pnpm dev                     # http://localhost:3000
 ```
+
+> Besoin d'un Postgres gratuit en local ? Créez une base sur [Neon](https://neon.tech) et collez sa chaîne de connexion dans `DATABASE_URL`.
 
 Créez un compte sur `/inscription`, puis créez un CV, adaptez-le à une offre et suivez vos candidatures.
 
@@ -28,8 +30,8 @@ Créez un compte sur `/inscription`, puis créez un CV, adaptez-le à une offre 
 
 | Variable | Rôle |
 |---|---|
-| `DATABASE_URL` | Connexion DB (dev : `file:./dev.db`) |
-| `AUTH_SECRET` | Secret de signature des sessions (valeur forte en prod) |
+| `DATABASE_URL` | Connexion PostgreSQL (Neon, Vercel Postgres, Supabase…) |
+| `AUTH_SECRET` | Secret de signature des sessions (valeur aléatoire forte) |
 | `ANTHROPIC_API_KEY` | **Optionnel.** Si absent, l'IA tourne en **mode démo** (résultats déterministes, l'app reste pleinement utilisable). Si présent, génération réelle via Claude. |
 
 ## Ce qui fonctionne (vertical complet)
@@ -65,9 +67,20 @@ prisma/schema.prisma         Modèle de données
 docs/                        Analyse de marché, blueprint, dossier de conception
 ```
 
-## Production (PostgreSQL)
+## Déployer sur Vercel
 
-Basculer `datasource.provider` sur `postgresql` dans `prisma/schema.prisma`, pointer `DATABASE_URL` vers un Postgres (Neon/RDS), `pnpm prisma migrate deploy`. Les payloads structurés sont déjà stockés en `String` (JSON), donc portables. Pour le matching sémantique offre↔CV, activer `pgvector` (cf. dossier de conception §11).
+Le projet est prêt pour Vercel. `vercel.json` lance `prisma db push` au build pour créer les tables automatiquement.
+
+1. **Base de données** — créez un Postgres gratuit sur [Neon](https://neon.tech) (ou via l'onglet *Storage* de Vercel) et copiez la chaîne de connexion `postgresql://…`.
+2. **Importer le repo** — sur [vercel.com/new](https://vercel.com/new), importez `AlfaGyattt/SaaS`.
+3. **Variables d'environnement** (avant de déployer) :
+   - `DATABASE_URL` = la chaîne Postgres de l'étape 1
+   - `AUTH_SECRET` = une valeur aléatoire (`node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`)
+   - `ANTHROPIC_API_KEY` = (optionnel) votre clé Claude pour la génération IA réelle
+4. **Deploy.** Le build crée les tables et publie l'app. Créez un compte sur `/inscription`.
+
+> Sans `ANTHROPIC_API_KEY`, l'app fonctionne en mode démo (IA déterministe).
+> Pour le matching sémantique offre↔CV en production, activer `pgvector` (cf. dossier de conception §11).
 
 ## Scripts
 

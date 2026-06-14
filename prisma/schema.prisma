@@ -1,14 +1,14 @@
 // Postulo — schéma de données applicatif.
-// Dev/démo : SQLite (aucun service externe requis).
-// Production : basculer le provider sur "postgresql" (cf. README) — les payloads
-// structurés sont stockés en String (JSON sérialisé) pour rester portables.
+// Production / Vercel : PostgreSQL (Neon, Vercel Postgres, etc.).
+// Le schéma est appliqué via `prisma db push` au build (cf. vercel.json).
+// Les payloads structurés sont stockés en String (JSON sérialisé).
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 

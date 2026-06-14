@@ -3,6 +3,7 @@
 import * as React from "react";
 import { ChevronDown } from "lucide-react";
 import { Container, SectionHeading } from "@/components/ui/layout";
+import { Reveal } from "@/components/ui/reveal";
 import { FAQ } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
@@ -12,8 +13,10 @@ export function Faq() {
   return (
     <section className="py-20 sm:py-28">
       <Container className="max-w-3xl">
-        <SectionHeading eyebrow="FAQ" title="Les questions que tout le monde se pose" />
-        <div className="mt-10 divide-y divide-border rounded-2xl border border-border bg-card">
+        <Reveal>
+          <SectionHeading eyebrow="FAQ" title="Les questions que tout le monde se pose" />
+        </Reveal>
+        <Reveal delay={80} className="mt-10 divide-y divide-border rounded-2xl border border-border bg-card shadow-sm">
           {FAQ.map((item, i) => {
             const isOpen = open === i;
             return (
@@ -46,7 +49,7 @@ export function Faq() {
               </div>
             );
           })}
-        </div>
+        </Reveal>
       </Container>
     </section>
   );

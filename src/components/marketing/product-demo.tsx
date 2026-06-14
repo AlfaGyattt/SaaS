@@ -1,10 +1,8 @@
-"use client";
-
-import * as React from "react";
 import { Wand2, ShieldCheck, MessageSquare, Check } from "lucide-react";
 import { Container, SectionHeading } from "@/components/ui/layout";
+import { Reveal } from "@/components/ui/reveal";
 import { ScoreRing } from "@/components/ui/score-ring";
-import { cn } from "@/lib/utils";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 const TABS = [
   { id: "adapter", label: "Adapter à une offre", icon: Wand2 },
@@ -13,40 +11,42 @@ const TABS = [
 ];
 
 export function ProductDemo() {
-  const [active, setActive] = React.useState("adapter");
-
   return (
     <section id="demo" className="bg-bg-subtle py-20 sm:py-28">
       <Container>
-        <SectionHeading
-          eyebrow="Démonstration"
-          title="Voyez le produit en action"
-          description="Trois moments qui changent tout dans une recherche d'emploi."
-        />
+        <Reveal>
+          <SectionHeading
+            eyebrow="Démonstration"
+            title="Voyez le produit en action"
+            description="Trois moments qui changent tout dans une recherche d'emploi."
+          />
+        </Reveal>
 
-        <div className="mx-auto mt-10 flex max-w-xl flex-wrap items-center justify-center gap-2">
-          {TABS.map((t) => (
-            <button
-              key={t.id}
-              onClick={() => setActive(t.id)}
-              className={cn(
-                "inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors",
-                active === t.id
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "bg-surface text-muted-foreground hover:text-foreground border border-border",
-              )}
-              aria-pressed={active === t.id}
-            >
-              <t.icon className="size-4" /> {t.label}
-            </button>
-          ))}
-        </div>
+        <Tabs defaultValue="adapter" className="mt-10 flex flex-col items-center">
+          <Reveal delay={80}>
+            <TabsList className="flex-wrap justify-center">
+              {TABS.map((t) => (
+                <TabsTrigger key={t.id} value={t.id}>
+                  <t.icon className="size-4" aria-hidden /> {t.label}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Reveal>
 
-        <div className="mx-auto mt-8 max-w-4xl rounded-2xl border border-border bg-card p-6 shadow-lg sm:p-8">
-          {active === "adapter" && <DemoAdapter />}
-          {active === "ats" && <DemoAts />}
-          {active === "entretien" && <DemoEntretien />}
-        </div>
+          <Reveal delay={160} className="mt-8 w-full">
+            <div className="mx-auto max-w-4xl rounded-2xl border border-border bg-card p-6 shadow-lg sm:p-8">
+              <TabsContent value="adapter">
+                <DemoAdapter />
+              </TabsContent>
+              <TabsContent value="ats">
+                <DemoAts />
+              </TabsContent>
+              <TabsContent value="entretien">
+                <DemoEntretien />
+              </TabsContent>
+            </div>
+          </Reveal>
+        </Tabs>
       </Container>
     </section>
   );
@@ -64,7 +64,7 @@ function DemoAdapter() {
         <ul className="mt-2 space-y-1.5 text-sm">
           {["Diplôme DEAS", "Travail de nuit", "Manutention patients"].map((r) => (
             <li key={r} className="flex items-center gap-2">
-              <Check className="size-4 text-success" /> {r}
+              <Check className="size-4 text-success" aria-hidden /> {r}
             </li>
           ))}
         </ul>
@@ -93,13 +93,17 @@ function DemoAts() {
         <p className="text-sm font-semibold">Votre CV passe les filtres — presque parfait.</p>
         <ul className="mt-3 space-y-2 text-sm">
           <li className="flex items-center gap-2">
-            <Check className="size-4 text-success" /> Structure lisible par les ATS
+            <Check className="size-4 text-success" aria-hidden /> Structure lisible par les ATS
           </li>
           <li className="flex items-center gap-2">
-            <Check className="size-4 text-success" /> Aucune faute détectée (correcteur FR)
+            <Check className="size-4 text-success" aria-hidden /> Aucune faute détectée
+            (correcteur FR)
           </li>
           <li className="flex items-center gap-2 text-muted-foreground">
-            <span className="grid size-4 place-items-center rounded-full bg-warning/15 text-[10px] font-bold text-warning">
+            <span
+              className="grid size-4 place-items-center rounded-full bg-warning/15 text-[10px] font-bold text-warning"
+              aria-hidden
+            >
               !
             </span>
             Ajoutez « gestes d&apos;urgence » pour +6 points
@@ -120,7 +124,7 @@ function DemoEntretien() {
         Aide-soignante depuis 5 ans, j&apos;ai accompagné...
       </div>
       <div className="max-w-lg rounded-xl border border-border bg-bg-subtle p-3 text-sm">
-        <p className="font-semibold text-success">Bon réflexe 👍</p>
+        <p className="font-semibold text-success">Bon réflexe</p>
         <p className="mt-1 text-muted-foreground">
           Ajoutez un exemple chiffré (méthode STAR) pour gagner en impact.
         </p>

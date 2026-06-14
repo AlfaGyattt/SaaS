@@ -1,6 +1,8 @@
 import { Navbar } from "@/components/marketing/navbar";
 import { Hero } from "@/components/marketing/hero";
 import { TrustBar } from "@/components/marketing/trust-bar";
+import { Stats } from "@/components/marketing/stats";
+import { HowItWorks } from "@/components/marketing/how-it-works";
 import { Features } from "@/components/marketing/features";
 import { ProductDemo } from "@/components/marketing/product-demo";
 import { UseCases } from "@/components/marketing/use-cases";
@@ -33,6 +35,8 @@ export default function Home() {
       <main className="flex-1">
         <Hero />
         <TrustBar />
+        <Stats />
+        <HowItWorks />
         <Features />
         <ProductDemo />
         <UseCases />

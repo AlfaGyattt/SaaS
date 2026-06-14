@@ -15,6 +15,12 @@ import {
   MessageSquare,
   LayoutTemplate,
   Settings,
+  Upload,
+  ClipboardPaste,
+  Trophy,
+  Star,
+  Globe,
+  MapPin,
 } from "lucide-react";
 
 export const SITE = {
@@ -280,3 +286,81 @@ export const FOLLOW_UPS = [
   { company: "Groupe Bastide", role: "Aide-soignante de nuit", days: 9 },
   { company: "EHPAD Les Tilleuls", role: "AS — CDI", days: 12 },
 ];
+
+// ---------- Landing : Comment ça marche ----------
+
+export type Step = {
+  icon: LucideIcon;
+  title: string;
+  description: string;
+};
+
+export const HOW_IT_WORKS: Step[] = [
+  {
+    icon: Upload,
+    title: "Créez ou importez votre CV",
+    description:
+      "Importez votre profil LinkedIn ou répondez à 4 questions. Votre CV aux normes françaises apparaît en quelques secondes — jamais de page blanche.",
+  },
+  {
+    icon: ClipboardPaste,
+    title: "Collez une offre, l'IA adapte tout",
+    description:
+      "CV, lettre de motivation et mail d'accompagnement sont réécrits pour CETTE offre, avec un score de compatibilité transparent.",
+  },
+  {
+    icon: Trophy,
+    title: "Décrochez l'entretien",
+    description:
+      "Exportez en PDF impeccable, suivez vos candidatures et préparez l'oral avec la simulation d'entretien par IA.",
+  },
+];
+
+// ---------- Landing : Bande de statistiques ----------
+
+export type Stat = {
+  icon: LucideIcon;
+  value: string;
+  label: string;
+};
+
+export const STATS: Stat[] = [
+  {
+    icon: FileStack,
+    value: "50 000+",
+    label: "candidatures créées",
+  },
+  {
+    icon: Star,
+    value: "4,7/5",
+    label: "sur Trustpilot",
+  },
+  {
+    icon: Globe,
+    value: "600+",
+    label: "métiers couverts",
+  },
+  {
+    icon: MapPin,
+    value: "100%",
+    label: "RGPD — hébergé en France",
+  },
+];
+
+// ---------- Landing : tarif annuel indicatif (toggle Pricing) ----------
+// Prix annuel affiché pour les plans à abonnement mensuel : 2 mois offerts (-20 %).
+// Clé = id du plan ; permet d'afficher un prix annuel sans toucher aux PLANS existants.
+
+export type AnnualPrice = {
+  /** Prix mensuel équivalent une fois l'année réglée (ex. "15,90 €"). */
+  monthlyEquivalent: string;
+  /** Période affichée sous le prix (ex. "/ mois · facturé 190,80 €/an"). */
+  period: string;
+};
+
+export const ANNUAL_PRICING: Record<string, AnnualPrice> = {
+  carriere: {
+    monthlyEquivalent: "15,90 €",
+    period: "/ mois · facturé 190,80 €/an",
+  },
+};

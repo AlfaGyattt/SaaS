@@ -10,10 +10,10 @@ import { Container } from "@/components/ui/layout";
 
 const LINKS = [
   { label: "Fonctionnalités", href: "#fonctionnalites" },
-  { label: "Cas d'usage", href: "#cas-usage" },
+  { label: "Modèles de CV", href: "/modele-cv" },
   { label: "Tarifs", href: "#tarifs" },
+  { label: "Conseils", href: "/conseils" },
   { label: "Avis", href: "#avis" },
-  { label: "Écoles", href: "/ecoles" },
 ];
 
 export function Navbar() {

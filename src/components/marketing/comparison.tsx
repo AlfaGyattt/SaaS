@@ -1,5 +1,6 @@
 import { Check, X, Minus } from "lucide-react";
 import { Container, SectionHeading } from "@/components/ui/layout";
+import { Reveal } from "@/components/ui/reveal";
 import { COMPARISON } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
@@ -17,12 +18,14 @@ export function Comparison() {
   return (
     <section className="py-20 sm:py-28">
       <Container>
-        <SectionHeading
-          eyebrow="Comparatif honnête"
-          title="Ce que les autres ne vous disent pas"
-          description="Pas de reconduction cachée, pas de mauvaise surprise à l'export."
-        />
-        <div className="mx-auto mt-12 max-w-3xl overflow-hidden rounded-2xl border border-border">
+        <Reveal>
+          <SectionHeading
+            eyebrow="Comparatif honnête"
+            title="Ce que les autres ne vous disent pas"
+            description="Pas de reconduction cachée, pas de mauvaise surprise à l'export."
+          />
+        </Reveal>
+        <Reveal delay={80} className="mx-auto mt-12 max-w-3xl overflow-hidden rounded-2xl border border-border shadow-sm">
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-bg-subtle">
@@ -56,7 +59,7 @@ export function Comparison() {
               ))}
             </tbody>
           </table>
-        </div>
+        </Reveal>
       </Container>
     </section>
   );

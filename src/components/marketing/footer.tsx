@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Logo } from "@/components/brand/logo";
 import { Container } from "@/components/ui/layout";
+import { Reveal } from "@/components/ui/reveal";
 
 const COLUMNS = [
   {
@@ -15,8 +16,8 @@ const COLUMNS = [
   {
     title: "Ressources",
     links: [
-      { label: "Exemples de CV par métier", href: "/exemple-cv" },
-      { label: "Lettres de motivation", href: "/lettre-de-motivation" },
+      { label: "Exemples de CV par métier", href: "/modele-cv" },
+      { label: "Lettres de motivation", href: "/modele-cv" },
       { label: "Analyseur de CV gratuit", href: "/outils/analyseur-cv-ats" },
       { label: "Conseils carrière", href: "/conseils" },
     ],
@@ -44,36 +45,39 @@ export function Footer() {
   return (
     <footer className="border-t border-border bg-bg-subtle">
       <Container className="py-14">
-        <div className="grid gap-10 lg:grid-cols-[1.4fr_repeat(4,1fr)]">
-          <div className="flex flex-col gap-3">
-            <Logo />
-            <p className="max-w-xs text-sm text-muted-foreground">
-              Le copilote de candidature français. Décrochez plus d&apos;entretiens, sans
-              abonnement piège.
-            </p>
-          </div>
-          {COLUMNS.map((col) => (
-            <div key={col.title}>
-              <p className="text-sm font-semibold">{col.title}</p>
-              <ul className="mt-3 space-y-2">
-                {col.links.map((l) => (
-                  <li key={l.label}>
-                    <Link
-                      href={l.href}
-                      className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-                    >
-                      {l.label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
+        <Reveal>
+          <div className="grid gap-10 lg:grid-cols-[1.4fr_repeat(4,1fr)]">
+            <div className="flex flex-col gap-3">
+              <Logo />
+              <p className="max-w-xs text-sm text-muted-foreground">
+                Le copilote de candidature français. Décrochez plus d&apos;entretiens, sans
+                abonnement piège.
+              </p>
             </div>
-          ))}
-        </div>
+            {COLUMNS.map((col) => (
+              <div key={col.title}>
+                <p className="text-sm font-semibold">{col.title}</p>
+                <ul className="mt-3 space-y-2">
+                  {col.links.map((l) => (
+                    <li key={l.label}>
+                      <Link
+                        href={l.href}
+                        className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                      >
+                        {l.label}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        </Reveal>
         <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-border pt-6 text-sm text-muted-foreground sm:flex-row">
           <p>© {new Date().getFullYear()} Postulo. Tous droits réservés.</p>
           <p className="inline-flex items-center gap-1.5">
-            <span className="size-2 rounded-full bg-success" /> Données hébergées en France 🇫🇷
+            <span className="size-2 rounded-full bg-success" aria-hidden /> Données hébergées en
+            France 🇫🇷
           </p>
         </div>
       </Container>

@@ -27,15 +27,26 @@ export async function registerAction(
   }
   const { email, password, name } = parsed.data;
 
-  const existing = await db.user.findUnique({ where: { email } });
-  if (existing) {
-    return { error: "Un compte existe déjà avec cette adresse. Connectez-vous." };
+  // Les opérations base de données sont isolées : en cas d'échec (base
+  // indisponible…), on renvoie un message clair plutôt que de planter.
+  // redirect() est appelé HORS du try (il lève volontairement une exception).
+  try {
+    const existing = await db.user.findUnique({ where: { email: email.toLowerCase() } });
+    if (existing) {
+      return { error: "Un compte existe déjà avec cette adresse. Connectez-vous." };
+    }
+    const user = await db.user.create({
+      data: {
+        email: email.toLowerCase(),
+        name: name?.trim() || email.split("@")[0],
+        passwordHash: await hashPassword(password),
+      },
+    });
+    await createSession(user.id);
+  } catch (err) {
+    console.error("registerAction:", err);
+    return { error: "Service momentanément indisponible. Réessayez dans un instant." };
   }
-
-  const user = await db.user.create({
-    data: { email, name: name || email.split("@")[0], passwordHash: await hashPassword(password) },
-  });
-  await createSession(user.id);
   redirect("/app");
 }
 
@@ -49,12 +60,17 @@ export async function loginAction(_prev: AuthState, formData: FormData): Promise
   }
   const { email, password } = parsed.data;
 
-  const user = await db.user.findUnique({ where: { email } });
-  // Message identique que l'email existe ou non (anti-énumération).
-  if (!user || !(await verifyPassword(password, user.passwordHash))) {
-    return { error: "Email ou mot de passe incorrect." };
+  try {
+    const user = await db.user.findUnique({ where: { email: email.toLowerCase() } });
+    // Message identique que l'email existe ou non (anti-énumération).
+    if (!user || !(await verifyPassword(password, user.passwordHash))) {
+      return { error: "Email ou mot de passe incorrect." };
+    }
+    await createSession(user.id);
+  } catch (err) {
+    console.error("loginAction:", err);
+    return { error: "Service momentanément indisponible. Réessayez dans un instant." };
   }
-  await createSession(user.id);
   redirect("/app");
 }
 

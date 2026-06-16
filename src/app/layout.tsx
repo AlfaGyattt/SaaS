@@ -21,11 +21,37 @@ export const metadata: Metadata = {
   },
   description: SITE.description,
   metadataBase: new URL(SITE.url),
+  applicationName: SITE.name,
+  keywords: [
+    "CV en ligne",
+    "créer un CV",
+    "lettre de motivation",
+    "modèle CV gratuit",
+    "préparation entretien",
+    "simulation entretien",
+    "candidature emploi",
+    "ATS",
+  ],
+  authors: [{ name: SITE.name }],
+  creator: SITE.name,
+  publisher: SITE.name,
+  formatDetection: { telephone: false },
   openGraph: {
     title: `${SITE.name} — ${SITE.tagline}`,
     description: SITE.description,
+    siteName: SITE.name,
     locale: "fr_FR",
     type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `${SITE.name} — ${SITE.tagline}`,
+    description: SITE.description,
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true, "max-image-preview": "large" },
   },
 };
 

@@ -13,29 +13,30 @@ import {
   Wand2,
   Eye,
   Pencil,
+  LayoutTemplate,
+  ChevronDown,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input, Textarea } from "@/components/ui/input";
 import { ScoreRing } from "@/components/ui/score-ring";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+} from "@/components/ui/dropdown-menu";
 import { ResumeCanvas } from "@/components/resume/resume-canvas";
 import { saveResume, suggestAccroche, improveText } from "@/server/actions/resume";
 import type { Experience, Formation, Langue, ResumeData } from "@/server/types";
+import { CV_TEMPLATES, getCvTemplate } from "@/lib/cv-templates";
 import { cn } from "@/lib/utils";
 
 const uid = () =>
   typeof crypto !== "undefined" && crypto.randomUUID
     ? crypto.randomUUID()
     : Math.random().toString(36).slice(2);
-
-const TEMPLATES: { id: string; label: string; color: string }[] = [
-  { id: "sobre", label: "Sobre", color: "#334155" },
-  { id: "moderne", label: "Moderne", color: "#3d5afe" },
-  { id: "elegant", label: "Élégant", color: "#059669" },
-  { id: "compact", label: "Compact", color: "#b45309" },
-  { id: "creatif", label: "Créatif", color: "#ff6b4a" },
-  { id: "classique", label: "Classique", color: "#3f3f46" },
-];
 
 type SaveStatus = "idle" | "saving" | "saved";
 
@@ -136,22 +137,42 @@ export function ResumeEditor({
               ATS
             </span>
           </div>
-          <div className="hidden items-center gap-1 rounded-lg border border-border p-1 md:flex">
-            {TEMPLATES.map((t) => (
-              <button
-                key={t.id}
-                onClick={() => setTemplate(t.id)}
-                title={t.label}
-                aria-label={`Modèle ${t.label}`}
-                aria-pressed={template === t.id}
-                className={cn(
-                  "size-5 rounded-full ring-offset-2 ring-offset-background transition-all",
-                  template === t.id ? "ring-2 ring-primary" : "hover:scale-110",
-                )}
-                style={{ backgroundColor: t.color }}
-              />
-            ))}
-          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="hidden md:inline-flex">
+                <LayoutTemplate className="size-4" />
+                <span className="max-w-24 truncate">{getCvTemplate(template).name}</span>
+                <ChevronDown className="size-3.5 opacity-60" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-64">
+              <DropdownMenuLabel>Modèle de CV</DropdownMenuLabel>
+              {CV_TEMPLATES.map((t) => (
+                <DropdownMenuItem
+                  key={t.id}
+                  onSelect={() => setTemplate(t.id)}
+                  className="items-start gap-2.5"
+                >
+                  <span
+                    className="mt-0.5 size-4 shrink-0 rounded-full ring-1 ring-black/5"
+                    style={{ backgroundColor: t.accent }}
+                  />
+                  <span className="flex-1">
+                    <span className="flex items-center gap-1.5">
+                      <span className="font-medium">{t.name}</span>
+                      <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                        {t.ats ? "ATS" : "Design"}
+                      </span>
+                    </span>
+                    <span className="mt-0.5 block text-xs leading-snug text-muted-foreground">
+                      {t.desc}
+                    </span>
+                  </span>
+                  {template === t.id && <Check className="mt-0.5 size-4 shrink-0 text-primary" />}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
           <Button variant="outline" size="sm" asChild>
             <a href={`/imprimer/cv/${id}`} target="_blank" rel="noopener noreferrer">
               <Download className="size-4" /> PDF

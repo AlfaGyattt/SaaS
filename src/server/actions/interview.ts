@@ -1,14 +1,17 @@
 "use server";
 
 import { requireUser } from "../auth";
-import { interviewTurn, type InterviewMessage } from "../ai";
+import { interviewTurn, type InterviewMessage, type InterviewResult } from "../ai";
 
 export async function interviewReply(input: {
   metier: string;
   messages: InterviewMessage[];
-}): Promise<{ reply: string; feedback?: string; done: boolean }> {
+  /** Plan de questions attendues (issu du kit d'une candidature). Facultatif. */
+  questions?: string[];
+}): Promise<InterviewResult> {
   await requireUser();
   const metier = (input.metier || "le poste visé").slice(0, 120);
   const messages = input.messages.slice(-12); // borne le contexte
-  return interviewTurn({ metier, messages });
+  const questions = input.questions?.slice(0, 10);
+  return interviewTurn({ metier, messages, questions });
 }

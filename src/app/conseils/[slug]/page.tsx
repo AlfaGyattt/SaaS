@@ -21,7 +21,19 @@ export async function generateMetadata({
   const { slug } = await params;
   const a = getArticle(slug);
   if (!a) return {};
-  return { title: `${a.titre} | Postulo`, description: a.description };
+  const url = `/conseils/${a.slug}`;
+  return {
+    title: `${a.titre} | Postulo`,
+    description: a.description,
+    alternates: { canonical: url },
+    openGraph: {
+      title: a.titre,
+      description: a.description,
+      url,
+      type: "article",
+      publishedTime: a.date,
+    },
+  };
 }
 
 export default async function ArticlePage({

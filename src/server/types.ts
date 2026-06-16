@@ -66,6 +66,83 @@ export type OfferAnalysis = {
   company: string;
   requirements: Requirement[];
   matchScore: number;
+  /** Mots-clés ATS détectés dans l'offre (à reprendre dans le CV). */
+  keywords?: string[];
+  /** Conseils d'optimisation du CV spécifiques à cette offre. */
+  cvTips?: string[];
+};
+
+/** Catégories de questions d'entretien. */
+export const INTERVIEW_CATEGORIES = [
+  "Présentation",
+  "Motivation",
+  "Compétences",
+  "Comportementale",
+  "Pièges",
+  "Vos questions",
+] as const;
+export type InterviewCategory = (typeof INTERVIEW_CATEGORIES)[number];
+
+/** Une question d'entretien attendue, avec l'intention du recruteur et un angle de réponse. */
+export type InterviewQuestion = {
+  question: string;
+  category: InterviewCategory;
+  /** Ce que le recruteur cherche vraiment à évaluer. */
+  intent: string;
+  /** Angle de réponse personnalisé (méthode STAR) basé sur le profil. */
+  suggestion: string;
+};
+
+/** Kit de préparation à l'entretien généré pour une offre précise. */
+export type InterviewKit = {
+  questions: InterviewQuestion[];
+  /** Conseils transverses pour cet entretien. */
+  conseils: string[];
+};
+
+export function parseInterviewKit(raw: string | null | undefined): InterviewKit | null {
+  if (!raw) return null;
+  try {
+    const json = JSON.parse(raw);
+    if (!json || !Array.isArray(json.questions)) return null;
+    return {
+      questions: json.questions.filter(
+        (q: unknown): q is InterviewQuestion =>
+          !!q && typeof (q as InterviewQuestion).question === "string",
+      ),
+      conseils: Array.isArray(json.conseils) ? json.conseils.map(String) : [],
+    };
+  } catch {
+    return null;
+  }
+}
+
+export function parseStringArray(raw: string | null | undefined): string[] {
+  if (!raw) return [];
+  try {
+    const json = JSON.parse(raw);
+    return Array.isArray(json) ? json.map(String) : [];
+  } catch {
+    return [];
+  }
+}
+
+/** Un tour de simulation d'entretien (types partagés client/serveur). */
+export type InterviewMessage = { from: "ai" | "user"; text: string };
+
+/** Bilan de fin d'entretien. */
+export type InterviewReport = {
+  score: number;
+  pointsForts: string[];
+  axes: string[];
+  synthese: string;
+};
+
+export type InterviewResult = {
+  reply: string;
+  feedback?: string;
+  done: boolean;
+  report?: InterviewReport;
 };
 
 export const APP_STATUSES = [

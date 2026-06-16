@@ -1,7 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { MapPin, Clock, Loader2, Trash2 } from "lucide-react";
+import Link from "next/link";
+import { MapPin, Clock, Loader2, Trash2, MessageSquare } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { updateApplicationStatus, deleteApplication } from "@/server/actions/application";
 import { APP_STATUSES, STATUS_LABELS, type AppStatus } from "@/server/types";
@@ -17,6 +18,7 @@ export function ApplicationCard({
     status: string;
     matchScore: number | null;
     followUp: boolean;
+    hasKit: boolean;
   };
 }) {
   const [pending, start] = React.useTransition();
@@ -24,10 +26,10 @@ export function ApplicationCard({
   return (
     <Card className="p-4">
       <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <p className="truncate font-medium leading-tight">{app.role}</p>
+        <Link href={`/app/candidatures/${app.id}`} className="min-w-0 flex-1 group">
+          <p className="truncate font-medium leading-tight group-hover:text-primary">{app.role}</p>
           <p className="truncate text-sm text-muted-foreground">{app.company}</p>
-        </div>
+        </Link>
         {app.matchScore != null && (
           <span className="shrink-0 rounded-full bg-primary-50 px-2 py-0.5 font-mono text-[11px] font-semibold text-primary-700">
             {app.matchScore}%
@@ -45,6 +47,14 @@ export function ApplicationCard({
           <span className="inline-flex items-center gap-1 text-warning">
             <Clock className="size-3.5" /> À relancer
           </span>
+        )}
+        {app.hasKit && (
+          <Link
+            href={`/app/entretien?app=${app.id}`}
+            className="inline-flex items-center gap-1 text-primary hover:underline"
+          >
+            <MessageSquare className="size-3.5" /> Entretien
+          </Link>
         )}
       </div>
 

@@ -3,14 +3,16 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "predev": "prisma db push",
     "dev": "next dev",
+    "prebuild": "prisma db push",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
     "postinstall": "prisma generate",
     "db:push": "prisma db push",
     "db:studio": "prisma studio",
-    "db:reset": "prisma db push --force-reset"
+    "db:reset": "prisma db push --force-reset --accept-data-loss"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.104.1",

@@ -11,6 +11,12 @@ export const metadata: Metadata = {
   title: "Conseils carrière, CV et entretien | Postulo",
   description:
     "Guides pratiques pour réussir votre CV, votre lettre de motivation et vos entretiens. Des conseils concrets et à jour pour décrocher plus d'entretiens.",
+  alternates: { canonical: "/conseils" },
+  openGraph: {
+    title: "Conseils carrière, CV et entretien",
+    description: "Guides pratiques pour réussir votre CV, votre lettre et vos entretiens.",
+    url: "/conseils",
+  },
 };
 
 export default function ConseilsPage() {

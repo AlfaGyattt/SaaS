@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Scripts de développement / test (hors bundle applicatif).
+    "scripts/**",
   ]),
 ]);
 

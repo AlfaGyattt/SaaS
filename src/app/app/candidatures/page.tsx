@@ -27,6 +27,7 @@ export default async function CandidaturesPage() {
         status: a.status,
         matchScore: a.matchScore,
         followUp: ["ENVOYEE", "RELANCEE"].includes(a.status),
+        hasKit: Boolean(a.prepKit),
       }));
 
   if (applications.length === 0) {

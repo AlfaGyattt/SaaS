@@ -13,6 +13,12 @@ export const metadata: Metadata = {
   title: "Modèles de CV gratuits et exemples par métier (2026) | Postulo",
   description:
     "Des modèles de CV gratuits et des exemples concrets par métier : aide-soignante, vendeur, cariste, comptable et bien plus. Créez votre CV en quelques minutes avec Postulo.",
+  alternates: { canonical: "/modele-cv" },
+  openGraph: {
+    title: "Modèles de CV gratuits et exemples par métier (2026)",
+    description: "Des modèles de CV gratuits et des exemples concrets par métier.",
+    url: "/modele-cv",
+  },
 };
 
 function groupByCategorie() {

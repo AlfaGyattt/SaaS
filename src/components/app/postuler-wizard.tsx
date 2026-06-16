@@ -7,46 +7,21 @@ import {
   ArrowLeft,
   Check,
   Sparkles,
-  Mail,
   Loader2,
-  Copy,
-  FileText,
+  MessageSquare,
+  Tag,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/input";
 import { ScoreRing } from "@/components/ui/score-ring";
-import { analyzeOfferAction, createTailoredApplication } from "@/server/actions/tailor";
+import { DossierTabs } from "@/components/app/dossier-tabs";
+import { analyzeOfferAction, createTailoredApplication, type TailorResult } from "@/server/actions/tailor";
 import type { OfferAnalysis } from "@/server/types";
 import { cn } from "@/lib/utils";
 
-type TailorResult = {
-  letterBody: string;
-  mailSubject: string;
-  mailBody: string;
-};
-
-function CopyButton({ text, label }: { text: string; label: string }) {
-  return (
-    <Button
-      variant="outline"
-      size="sm"
-      onClick={async () => {
-        try {
-          await navigator.clipboard.writeText(text);
-          toast.success(`${label} copié dans le presse-papier.`);
-        } catch {
-          toast.error("Impossible de copier.");
-        }
-      }}
-    >
-      <Copy className="size-4" /> Copier
-    </Button>
-  );
-}
-
-const STEPS = ["Coller l'offre", "Compatibilité", "Candidature prête"];
+const STEPS = ["Coller l'offre", "Compatibilité", "Dossier complet"];
 
 export function PostulerWizard({ resumes }: { resumes: { id: string; title: string }[] }) {
   const [step, setStep] = React.useState(0);
@@ -80,12 +55,19 @@ export function PostulerWizard({ resumes }: { resumes: { id: string; title: stri
       });
       setResult(res);
       setStep(2);
-      toast.success("Candidature générée et ajoutée au suivi.");
+      toast.success("Dossier de candidature généré et ajouté à votre suivi.");
     } catch {
       toast.error("La génération a échoué. Réessayez.");
     } finally {
       setLoading(false);
     }
+  }
+
+  function reset() {
+    setStep(0);
+    setOffer("");
+    setAnalysis(null);
+    setResult(null);
   }
 
   return (
@@ -116,8 +98,9 @@ export function PostulerWizard({ resumes }: { resumes: { id: string; title: stri
         ))}
       </ol>
 
-      <Card className="mt-6 p-6">
-        {step === 0 && (
+      {/* Étape 0 — coller l'offre */}
+      {step === 0 && (
+        <Card className="mt-6 p-6">
           <div className="space-y-4">
             <div>
               <label className="text-sm font-medium">
@@ -161,9 +144,12 @@ export function PostulerWizard({ resumes }: { resumes: { id: string; title: stri
               </Button>
             </div>
           </div>
-        )}
+        </Card>
+      )}
 
-        {step === 1 && analysis && (
+      {/* Étape 1 — compatibilité */}
+      {step === 1 && analysis && (
+        <Card className="mt-6 p-6">
           <div className="space-y-5">
             <div className="flex items-center gap-5">
               <ScoreRing value={analysis.matchScore} size={104} stroke={9} label="Match" />
@@ -205,77 +191,105 @@ export function PostulerWizard({ resumes }: { resumes: { id: string; title: stri
                 </li>
               ))}
             </ul>
+
+            {analysis.keywords && analysis.keywords.length > 0 && (
+              <div className="rounded-xl border border-border bg-bg-subtle p-4">
+                <p className="flex items-center gap-2 text-sm font-medium">
+                  <Tag className="size-4 text-primary" /> Mots-clés à intégrer dans votre CV
+                </p>
+                <div className="mt-2.5 flex flex-wrap gap-1.5">
+                  {analysis.keywords.map((k) => (
+                    <span
+                      key={k}
+                      className="rounded-full border border-border bg-card px-2.5 py-1 text-xs"
+                    >
+                      {k}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="rounded-xl border border-primary/25 bg-primary-50/50 p-4 text-sm">
+              <p className="flex items-center gap-2 font-medium text-primary">
+                <Sparkles className="size-4" /> En 1 clic, vous obtenez :
+              </p>
+              <p className="mt-1 text-muted-foreground">
+                une lettre de motivation adaptée, le mail de candidature, les conseils pour votre CV,
+                et surtout <strong className="text-foreground">les questions d&apos;entretien
+                attendues avec vos réponses</strong>.
+              </p>
+            </div>
+
             <div className="flex justify-between">
               <Button variant="ghost" onClick={() => setStep(0)}>
                 <ArrowLeft className="size-4" /> Retour
               </Button>
               <Button onClick={generate} disabled={loading}>
                 {loading ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}
-                Générer ma candidature
+                Générer mon dossier complet
               </Button>
             </div>
           </div>
-        )}
+        </Card>
+      )}
 
-        {step === 2 && (
-          <div className="space-y-5">
-            <div className="rounded-xl border border-success/30 bg-success/5 p-4 text-sm">
-              <p className="font-semibold text-success">Votre candidature est prête 🎉</p>
-              <p className="mt-1 text-muted-foreground">
-                CV, lettre et mail adaptés à l&apos;offre, et ajoutés à votre suivi.
-              </p>
-            </div>
-            {result && (
-              <div className="space-y-3">
-                <div className="rounded-xl border border-border">
-                  <div className="flex items-center justify-between border-b border-border px-4 py-2.5">
-                    <span className="flex items-center gap-2 text-sm font-medium">
-                      <Mail className="size-4 text-primary" /> Lettre de motivation
-                    </span>
-                    <CopyButton text={result.letterBody} label="Lettre" />
-                  </div>
-                  <pre className="max-h-48 overflow-auto whitespace-pre-wrap px-4 py-3 font-sans text-sm text-muted-foreground">
-                    {result.letterBody}
-                  </pre>
+      {/* Étape 2 — dossier complet */}
+      {step === 2 && result && (
+        <div className="mt-6 space-y-5">
+          <div className="rounded-xl border border-success/30 bg-success/5 p-4">
+            <p className="flex items-center gap-2 font-semibold text-success">
+              <Check className="size-5" /> Votre dossier de candidature est prêt 🎉
+            </p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Lettre, mail, conseils CV et préparation à l&apos;entretien — tout est adapté à cette
+              offre et ajouté à votre suivi.
+            </p>
+          </div>
+
+          {/* CTA entretien — la plus-value */}
+          <Card className="overflow-hidden border-primary/30 bg-gradient-to-br from-primary-50 to-surface p-5">
+            <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-start gap-3.5">
+                <div className="grid size-11 place-items-center rounded-xl bg-primary text-primary-foreground shadow-sm">
+                  <MessageSquare className="size-5.5" />
                 </div>
-                <div className="rounded-xl border border-border">
-                  <div className="flex items-center justify-between border-b border-border px-4 py-2.5">
-                    <span className="flex items-center gap-2 text-sm font-medium">
-                      <FileText className="size-4 text-primary" /> Mail de candidature
-                    </span>
-                    <CopyButton
-                      text={`Objet : ${result.mailSubject}\n\n${result.mailBody}`}
-                      label="Mail"
-                    />
-                  </div>
-                  <div className="px-4 py-3 text-sm">
-                    <p className="font-medium">Objet : {result.mailSubject}</p>
-                    <pre className="mt-1 whitespace-pre-wrap font-sans text-muted-foreground">
-                      {result.mailBody}
-                    </pre>
-                  </div>
+                <div>
+                  <h3 className="font-semibold">Passez l&apos;entretien blanc</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Entraînez-vous sur les questions attendues, avec un bilan noté à la fin.
+                  </p>
                 </div>
               </div>
-            )}
-            <div className="flex flex-col gap-2 sm:flex-row sm:justify-between">
-              <Button variant="outline" asChild>
-                <Link href="/app/candidatures">Voir mon suivi</Link>
-              </Button>
-              <Button
-                variant="accent"
-                onClick={() => {
-                  setStep(0);
-                  setOffer("");
-                  setAnalysis(null);
-                  setResult(null);
-                }}
-              >
-                Postuler à une autre offre
+              <Button variant="accent" asChild className="w-full sm:w-auto">
+                <Link href={`/app/entretien?app=${result.applicationId}`}>
+                  Démarrer la simulation <ArrowRight className="size-4" />
+                </Link>
               </Button>
             </div>
+          </Card>
+
+          <DossierTabs
+            data={{
+              letterBody: result.letterBody,
+              mailSubject: result.mailSubject,
+              mailBody: result.mailBody,
+              kit: result.kit,
+              cvTips: result.cvTips,
+              keywords: result.keywords,
+            }}
+          />
+
+          <div className="flex flex-col gap-2 sm:flex-row sm:justify-between">
+            <Button variant="outline" asChild>
+              <Link href="/app/candidatures">Voir mon suivi</Link>
+            </Button>
+            <Button variant="accent" onClick={reset}>
+              Postuler à une autre offre
+            </Button>
           </div>
-        )}
-      </Card>
+        </div>
+      )}
     </>
   );
 }

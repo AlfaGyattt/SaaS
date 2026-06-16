@@ -9,8 +9,14 @@ const COOKIE = "postulo_session";
 const MAX_AGE = 60 * 60 * 24 * 30; // 30 jours
 
 function secret() {
-  const s = process.env.AUTH_SECRET;
-  if (!s) throw new Error("AUTH_SECRET manquant");
+  // En production, AUTH_SECRET est obligatoire. En développement local, on
+  // retombe sur une valeur par défaut pour que l'app fonctionne sans configuration.
+  const s =
+    process.env.AUTH_SECRET ||
+    (process.env.NODE_ENV !== "production"
+      ? "postulo-dev-secret-insecure-change-in-production"
+      : undefined);
+  if (!s) throw new Error("AUTH_SECRET manquant en production");
   return new TextEncoder().encode(s);
 }
 

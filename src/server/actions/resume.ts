@@ -11,14 +11,16 @@ import {
   type ResumeData,
 } from "../types";
 import { generateAccroche, improveBullet, scoreAts } from "../ai";
+import { CV_TEMPLATE_IDS, DEFAULT_TEMPLATE } from "@/lib/cv-templates";
 
-const TEMPLATES = ["sobre", "moderne", "elegant", "compact", "creatif", "classique"];
+const TEMPLATES = CV_TEMPLATE_IDS;
 
 export async function createResume(formData?: FormData): Promise<void> {
   const user = await requireUser();
   const title = (formData?.get("title") as string) || "Nouveau CV";
   const templateRaw = formData?.get("templateId") as string | null;
-  const templateId = templateRaw && TEMPLATES.includes(templateRaw) ? templateRaw : "sobre";
+  const templateId =
+    templateRaw && TEMPLATES.includes(templateRaw) ? templateRaw : DEFAULT_TEMPLATE;
   const data = emptyResumeData();
   data.prenom = user.name?.split(" ")[0] ?? "";
   data.email = user.email;

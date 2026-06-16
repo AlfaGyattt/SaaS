@@ -21,9 +21,15 @@ export async function generateMetadata({
   const { metier } = await params;
   const m = getMetier(metier);
   if (!m) return {};
+  const title = `Lettre de motivation ${m.label} — exemple et modèle gratuit | Postulo`;
+  const description = `Exemple de lettre de motivation ${m.label.toLowerCase()} structurée (méthode Vous-Moi-Nous), prête à personnaliser. Conseils et modèle gratuit 2026.`;
+  const url = `/lettre-de-motivation/${m.slug}`;
   return {
-    title: `Lettre de motivation ${m.label} — exemple et modèle gratuit | Postulo`,
-    description: `Exemple de lettre de motivation ${m.label.toLowerCase()} structurée (méthode Vous-Moi-Nous), prête à personnaliser. Conseils et modèle gratuit 2026.`,
+    title,
+    description,
+    keywords: [`lettre de motivation ${m.label}`, `exemple lettre ${m.label}`, `modèle lettre ${m.label}`],
+    alternates: { canonical: url },
+    openGraph: { title, description, url, type: "article" },
   };
 }
 

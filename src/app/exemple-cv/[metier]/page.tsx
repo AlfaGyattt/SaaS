@@ -31,9 +31,14 @@ export async function generateMetadata({
   const { metier } = await params;
   const m = getMetier(metier);
   if (!m) return {};
+  const title = `Exemple de CV ${m.label} (2026) — modèle gratuit | Postulo`;
+  const url = `/exemple-cv/${m.slug}`;
   return {
-    title: `Exemple de CV ${m.label} (2026) — modèle gratuit | Postulo`,
+    title,
     description: m.intro,
+    keywords: [`CV ${m.label}`, `exemple CV ${m.label}`, `modèle CV ${m.label}`, ...m.competences.slice(0, 4)],
+    alternates: { canonical: url },
+    openGraph: { title, description: m.intro, url, type: "article" },
   };
 }
 
@@ -109,12 +114,24 @@ export default async function ExempleCvMetierPage({
 
   const faqJsonLd = {
     "@context": "https://schema.org",
-    "@type": "FAQPage",
-    mainEntity: faq.map((f) => ({
-      "@type": "Question",
-      name: f.q,
-      acceptedAnswer: { "@type": "Answer", text: f.a },
-    })),
+    "@graph": [
+      {
+        "@type": "FAQPage",
+        mainEntity: faq.map((f) => ({
+          "@type": "Question",
+          name: f.q,
+          acceptedAnswer: { "@type": "Answer", text: f.a },
+        })),
+      },
+      {
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: "Accueil", item: "/" },
+          { "@type": "ListItem", position: 2, name: "Modèles de CV", item: "/modele-cv" },
+          { "@type": "ListItem", position: 3, name: `CV ${m.label}`, item: `/exemple-cv/${m.slug}` },
+        ],
+      },
+    ],
   };
 
   const memeCategorie = METIERS.filter(

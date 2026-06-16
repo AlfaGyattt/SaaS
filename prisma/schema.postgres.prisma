@@ -1,17 +1,16 @@
-// Postulo — schéma de données applicatif.
-// DÉVELOPPEMENT LOCAL : SQLite, zéro configuration (fichier prisma/dev.db créé
-// automatiquement). Aucune base à installer, aucune variable à définir.
-// PRODUCTION / Vercel : PostgreSQL via prisma/schema.postgres.prisma
-// (sélectionné par vercel.json). Les deux schémas sont identiques hormis la
-// source de données. Les payloads structurés sont stockés en String (JSON).
+// Postulo — schéma PRODUCTION (PostgreSQL).
+// Utilisé uniquement au build Vercel (cf. vercel.json :
+//   prisma generate --schema=prisma/schema.postgres.prisma).
+// Identique à prisma/schema.prisma (SQLite, dev local) hormis la datasource.
+// Garder les deux fichiers synchronisés lors d'un changement de modèle.
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = "file:./dev.db"
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model User {
@@ -88,12 +87,12 @@ model Application {
   city           String?
   status         String    @default("BROUILLON") // BROUILLON|ENVOYEE|RELANCEE|ENTRETIEN|OFFRE|REFUSEE
   matchScore     Int?
-  letterBody     String?   // lettre adaptée à l'offre
+  letterBody     String?
   mailSubject    String?
   mailBody       String?
-  prepKit        String?   // InterviewKit sérialisé (questions attendues + réponses)
-  cvTips         String?   // conseils d'optimisation du CV pour CETTE offre (string[] JSON)
-  keywords       String?   // mots-clés ATS de l'offre (string[] JSON)
+  prepKit        String?
+  cvTips         String?
+  keywords       String?
   nextFollowUpAt DateTime?
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt

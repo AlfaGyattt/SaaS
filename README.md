@@ -8,39 +8,42 @@ Application full-stack **fonctionnelle de bout en bout** : authentification, bas
 
 - **Next.js 16** (App Router, React 19, Server Actions) + **TypeScript**
 - **Tailwind CSS v4** + composants maison (design system Postulo)
-- **Prisma 6** + **SQLite** en dev (portable vers PostgreSQL en prod)
+- **Prisma 6** — **SQLite** en local (zéro configuration) · **PostgreSQL** en production
 - **Auth maison** : email/mot de passe (bcrypt) + session JWT signée (jose), cookie httpOnly
 - **IA** : SDK Anthropic (Claude **Sonnet** pour la génération, **Haiku** pour l'extraction/scoring) avec **fallback démo déterministe** si aucune clé n'est fournie
 - **zod** (validation), **next-themes** (clair/sombre), **lucide-react** (icônes)
 
-## Démarrer
+## Démarrer (aucune configuration requise)
 
 ```bash
-pnpm install                 # génère aussi le client Prisma (postinstall)
-cp .env.example .env         # renseignez DATABASE_URL (Postgres) et AUTH_SECRET
-pnpm prisma db push          # crée les tables dans votre base Postgres
-pnpm dev                     # http://localhost:3000
+pnpm install   # génère le client Prisma
+pnpm dev       # crée la base SQLite locale puis démarre http://localhost:3000
 ```
 
-> Besoin d'un Postgres gratuit en local ? Créez une base sur [Neon](https://neon.tech) et collez sa chaîne de connexion dans `DATABASE_URL`.
+C'est tout : **aucune base à installer, aucune variable d'environnement à définir.**
+En local, Postulo utilise une base **SQLite** (`prisma/dev.db`) créée automatiquement,
+et l'IA tourne en **mode démo** déterministe. Créez un compte sur `/inscription`,
+puis créez un CV, adaptez-le à une offre et préparez votre entretien.
 
-Créez un compte sur `/inscription`, puis créez un CV, adaptez-le à une offre et suivez vos candidatures.
+> Pour activer la génération IA réelle en local, créez un fichier `.env.local`
+> avec `ANTHROPIC_API_KEY="sk-ant-…"`.
 
 ### Variables d'environnement
 
 | Variable | Rôle |
 |---|---|
-| `DATABASE_URL` | Connexion PostgreSQL (Neon, Vercel Postgres, Supabase…) |
-| `AUTH_SECRET` | Secret de signature des sessions (valeur aléatoire forte) |
 | `ANTHROPIC_API_KEY` | **Optionnel.** Si absent, l'IA tourne en **mode démo** (résultats déterministes, l'app reste pleinement utilisable). Si présent, génération réelle via Claude. |
+| `DATABASE_URL` | **Production uniquement.** Connexion PostgreSQL (Neon, Vercel Postgres, Supabase…). Ignoré en local (SQLite). |
+| `AUTH_SECRET` | **Production uniquement.** Secret de signature des sessions. En local, une valeur de dev est utilisée par défaut. |
 
 ## Ce qui fonctionne (vertical complet)
 
 - **Auth réelle** : inscription, connexion, déconnexion, sessions signées, protection de `/app/*`, anti-énumération.
-- **CV** : création, **éditeur live** (aperçu A4 fidèle, autosave), assistance IA (accroche, amélioration de puces), **score ATS** recalculé en direct, **export PDF** (impression navigateur), suppression.
-- **Postuler** : analyse d'offre + compatibilité (IA ou démo) → génération CV/lettre/mail → **candidature créée automatiquement** dans le suivi.
-- **Suivi** : kanban des candidatures, **changement de statut** persistant, relances.
-- **Dashboard** : compteurs réels, CV récent, relances, score ATS moyen, états vides soignés.
+- **CV** : création, **éditeur live** (aperçu A4 fidèle, autosave), **8 modèles** sur 3 mises en page (une colonne ATS, bandeau latéral, en-tête coloré), assistance IA (accroche, amélioration de puces), **score ATS** en direct, **export PDF**.
+- **Postuler — dossier complet en 1 clic** : analyse d'offre + compatibilité → **lettre adaptée + mail + conseils CV + kit d'entretien** (questions attendues, intention du recruteur, angle de réponse personnalisé). La candidature est créée automatiquement dans le suivi.
+- **Entretien** : simulation par IA qui suit les **questions attendues de l'offre**, conseil après chaque réponse, et **bilan noté** (points forts + axes de progrès) à la fin.
+- **Suivi** : kanban des candidatures, **changement de statut** persistant, accès au dossier complet de chaque candidature, relances.
+- **Dashboard** : parcours de démarrage, compteurs réels, relances, préparation d'entretien, score ATS moyen.
 
 ## Structure
 
@@ -67,17 +70,23 @@ prisma/schema.prisma         Modèle de données
 docs/                        Analyse de marché, blueprint, dossier de conception
 ```
 
-## Déployer sur Vercel
+## Déployer sur Vercel (PostgreSQL)
 
-Le projet est prêt pour Vercel. `vercel.json` lance `prisma db push` au build pour créer les tables automatiquement.
+En production, Postulo bascule automatiquement sur **PostgreSQL** : `vercel.json`
+utilise le schéma `prisma/schema.postgres.prisma` et crée les tables au build
+(`prisma db push`). Le code applicatif est identique — seule la source de données change.
 
-1. **Base de données** — créez un Postgres gratuit sur [Neon](https://neon.tech) (ou via l'onglet *Storage* de Vercel) et copiez la chaîne de connexion `postgresql://…`.
+1. **Base de données** — créez un Postgres gratuit sur [Neon](https://neon.tech) (ou via l'onglet *Storage* de Vercel) et copiez la chaîne `postgresql://…`.
 2. **Importer le repo** — sur [vercel.com/new](https://vercel.com/new), importez `AlfaGyattt/SaaS`.
 3. **Variables d'environnement** (avant de déployer) :
    - `DATABASE_URL` = la chaîne Postgres de l'étape 1
    - `AUTH_SECRET` = une valeur aléatoire (`node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`)
    - `ANTHROPIC_API_KEY` = (optionnel) votre clé Claude pour la génération IA réelle
 4. **Deploy.** Le build crée les tables et publie l'app. Créez un compte sur `/inscription`.
+
+> Les deux schémas (`prisma/schema.prisma` SQLite et `prisma/schema.postgres.prisma`
+> PostgreSQL) sont identiques hormis la datasource : pensez à les garder synchronisés
+> si vous modifiez un modèle.
 
 > Sans `ANTHROPIC_API_KEY`, l'app fonctionne en mode démo (IA déterministe).
 > Pour le matching sémantique offre↔CV en production, activer `pgvector` (cf. dossier de conception §11).
